@@ -524,6 +524,18 @@ footer{
 footer strong{color:var(--or)}
 footer a{color:var(--or);text-decoration:none;font-weight:600}
 
+/* CLOSED BANNER */
+#closed-banner{
+  display:none;
+  background:linear-gradient(135deg,#1A0E00,#3A1A00);
+  color:#fff;border-radius:16px;
+  padding:1.4rem 1.2rem;margin-top:.8rem;
+  text-align:center;
+}
+#closed-banner .cb-icon{font-size:2.2rem;margin-bottom:.4rem}
+#closed-banner .cb-title{font-family:'Bebas Neue',cursive;font-size:1.5rem;letter-spacing:.06em;color:var(--gold)}
+#closed-banner .cb-sub{font-size:.82rem;color:rgba(255,255,255,.7);margin-top:.3rem;line-height:1.5}
+
 /* DELIVERY FORM BUTTONS */
 .tipo-btn, .pago-btn {
   padding:.65rem .5rem;border-radius:12px;
@@ -604,6 +616,12 @@ footer a{color:var(--or);text-decoration:none;font-weight:600}
     <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.846L0 24l6.335-1.508C8.053 23.447 9.984 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.637-.52-5.13-1.422l-.368-.218-3.762.896.944-3.658-.24-.376A9.945 9.945 0 0 1 2 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>
     Enviar pedido por WhatsApp
   </a>
+
+  <div id="closed-banner">
+    <div class="cb-icon">🌙</div>
+    <div class="cb-title">Estamos cerrados</div>
+    <div class="cb-sub">Nuestro horario es<br><strong>6:00 pm – 12:30 am · Todos los días</strong><br>¡Vuelve pronto! 🔥</div>
+  </div>
 </div>
 
 <nav>
@@ -1135,6 +1153,31 @@ const io = new IntersectionObserver(entries => {
   });
 }, {threshold:.05});
 document.querySelectorAll("#panel-perros .item-card").forEach(c => io.observe(c));
+
+/* ══════════════════════════════════
+   HORARIO — 6:00pm a 12:30am
+══════════════════════════════════ */
+function isOpen() {
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  return mins >= 18 * 60 || mins <= 30;
+}
+
+function applySchedule() {
+  const waLink      = document.getElementById("wa-link");
+  const closedBanner= document.getElementById("closed-banner");
+  if (isOpen()) {
+    waLink.style.display = "flex";
+    closedBanner.style.display = "none";
+  } else {
+    waLink.style.display = "none";
+    closedBanner.style.display = "block";
+  }
+}
+
+const _origOpenCart = openCart;
+openCart = function() { _origOpenCart(); applySchedule(); };
+setInterval(applySchedule, 60000);
 </script>
 </body>
 </html>
