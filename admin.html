@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Admin – Donde La Mona 🔧</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --or:#FF5E00;--gold:#FFC300;--bg:#FFFCF8;--bg2:#FFF4E8;
+  --txt:#1A0E00;--txt2:#7A5030;--bdr:#FFE0C0;
+  --r:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#F5F0EB;color:var(--txt);min-height:100vh}
+
+/* LOGIN */
+#login-screen{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(160deg,#1A0E00,#3A1A00);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+}
+.login-box{
+  background:#fff;border-radius:24px;padding:2.2rem 1.8rem;
+  width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;
+}
+.login-icon{font-size:3rem;margin-bottom:.8rem}
+.login-title{font-family:'Bebas Neue',cursive;font-size:2rem;letter-spacing:.06em;color:var(--txt);margin-bottom:.3rem}
+.login-title span{color:var(--or)}
+.login-sub{font-size:.82rem;color:var(--txt2);margin-bottom:1.6rem}
+.login-input{
+  width:100%;border:1.5px solid var(--bdr);border-radius:12px;
+  padding:.85rem 1rem;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:1rem;color:var(--txt);background:var(--bg2);
+  outline:none;transition:border-color .2s;text-align:center;
+  letter-spacing:.08em;margin-bottom:.8rem;
+}
+.login-input:focus{border-color:var(--or)}
+.login-btn{
+  width:100%;padding:.95rem;
+  background:linear-gradient(135deg,var(--or),var(--gold));
+  color:#fff;border:none;border-radius:50px;
+  font-weight:800;font-size:1rem;cursor:pointer;
+  box-shadow:0 6px 18px rgba(255,94,0,.35);transition:transform .15s;
+}
+.login-btn:active{transform:scale(.97)}
+.login-error{color:#e05;font-size:.8rem;font-weight:700;margin-top:.5rem;display:none}
+
+/* TOPBAR */
+.topbar{
+  background:linear-gradient(135deg,var(--txt),#3A1A00);
+  color:#fff;padding:1rem 1.2rem;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-title{font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:.06em}
+.topbar-title span{color:var(--gold)}
+.back-btn{
+  background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);
+  color:#fff;border-radius:50px;padding:.4rem 1rem;
+  font-size:.8rem;font-weight:700;cursor:pointer;text-decoration:none;
+  transition:background .15s;
+}
+.back-btn:hover{background:rgba(255,255,255,.25)}
+
+/* MAIN */
+.main{max-width:700px;margin:0 auto;padding:1.5rem 1rem 5rem}
+
+/* CATEGORY */
+.cat-section{background:#fff;border-radius:var(--r);border:1.5px solid var(--bdr);margin-bottom:1.2rem;overflow:hidden}
+.cat-header{
+  background:var(--bg2);padding:.9rem 1.2rem;
+  display:flex;align-items:center;gap:.5rem;
+  cursor:pointer;user-select:none;border-bottom:1.5px solid var(--bdr);
+}
+.cat-header-title{font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:.05em;flex:1}
+.cat-toggle{font-size:.85rem;color:var(--txt2);transition:transform .2s}
+.cat-body{padding:.8rem 1rem 1rem}
+.cat-body.collapsed{display:none}
+
+/* ITEM ROW */
+.item-row{padding:.9rem 0;border-bottom:1px solid var(--bdr)}
+.item-row:last-child{border-bottom:none}
+.item-row-name{font-weight:800;font-size:.9rem;margin-bottom:.6rem;color:var(--txt)}
+.item-fields{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+@media(max-width:400px){.item-fields{grid-template-columns:1fr}}
+.field-group label{display:block;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:.3rem}
+.field-group input{
+  width:100%;border:1.5px solid var(--bdr);border-radius:10px;
+  padding:.6rem .75rem;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:.84rem;color:var(--txt);background:var(--bg2);outline:none;transition:border-color .2s;
+}
+.field-group input:focus{border-color:var(--or)}
+.img-preview{width:100%;height:60px;border-radius:8px;object-fit:cover;margin-top:.4rem;border:1.5px solid var(--bdr);display:none}
+
+/* SAVE BAR */
+.save-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff;border-top:1.5px solid var(--bdr);
+  padding:1rem;display:flex;gap:.7rem;justify-content:center;z-index:200;
+}
+.save-btn{
+  background:linear-gradient(135deg,var(--or),var(--gold));
+  color:#fff;border:none;border-radius:50px;
+  padding:.85rem 2rem;font-weight:800;font-size:.95rem;cursor:pointer;
+  box-shadow:0 6px 18px rgba(255,94,0,.35);transition:transform .15s;flex:1;max-width:300px;
+}
+.save-btn:active{transform:scale(.97)}
+.reset-btn{
+  background:#fff;color:var(--txt2);border:1.5px solid var(--bdr);border-radius:50px;
+  padding:.85rem 1.4rem;font-weight:700;font-size:.88rem;cursor:pointer;transition:border-color .15s;
+}
+.reset-btn:hover{border-color:var(--or);color:var(--or)}
+
+/* TOAST */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--txt);color:#fff;font-weight:700;font-size:.82rem;
+  padding:.55rem 1.3rem;border-radius:50px;white-space:nowrap;
+  pointer-events:none;z-index:999;opacity:0;transition:opacity .22s,transform .22s;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* INFO BOX */
+.info-box{
+  background:linear-gradient(135deg,#FFF4E8,#FFF0DC);
+  border:1.5px solid var(--bdr);border-radius:var(--r);
+  padding:1rem 1.2rem;margin-bottom:1.2rem;
+  font-size:.82rem;color:var(--txt2);line-height:1.6;
+}
+.info-box strong{color:var(--or)}
+
+/* LOADING */
+#loading{text-align:center;padding:3rem 1rem;color:var(--txt2);font-size:.9rem}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-icon">🔒</div>
+    <div class="login-title">Admin <span>La Mona</span></div>
+    <div class="login-sub">Ingresa la contraseña para continuar</div>
+    <input type="password" class="login-input" id="pwd-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPwd()">
+    <button class="login-btn" onclick="checkPwd()">Entrar</button>
+    <div class="login-error" id="login-error">❌ Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- ADMIN CONTENT -->
+<div id="admin-content" style="display:none">
+
+  <div class="topbar">
+    <div class="topbar-title">🔧 Admin <span>Donde La Mona</span></div>
+    <a href="index.html" class="back-btn">← Ver página</a>
+  </div>
+
+  <div class="main">
+    <div class="info-box">
+      💡 <strong>¿Cómo funciona?</strong> Cambia los precios o pega un link de imagen nuevo. Toca <strong>Guardar cambios</strong> y todos los clientes ven los cambios al instante. Para imágenes, súbelas a <strong>ibb.co</strong> y pega el link aquí.
+    </div>
+    <div id="loading">⏳ Cargando datos...</div>
+    <div id="admin-panels"></div>
+  </div>
+
+  <div class="save-bar">
+    <button class="reset-btn" onclick="resetAll()">🔄 Restaurar</button>
+    <button class="save-btn" onclick="saveAll()">💾 Guardar cambios</button>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBtBUmUwkx2tGJXHz5JpuQWZUht8KRc77o",
+  authDomain: "dondelamona-3609d.firebaseapp.com",
+  projectId: "dondelamona-3609d",
+  storageBucket: "dondelamona-3609d.firebasestorage.app",
+  messagingSenderId: "721494465106",
+  appId: "1:721494465106:web:3664c69deb305178e6dd8b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+/* ══ MENU BASE ══ */
+const IMG = {
+  perroMedioSuizo: "https://i.ibb.co/5W9XG71c/Whats-App-Image-2026-03-12-at-7-12-16-PM.jpg",
+  salchizuiza:     "https://i.ibb.co/zTNmQHhr/Whats-App-Image-2026-03-12-at-7-12-15-PM-3.jpg",
+  picadaTrifasica: "https://i.ibb.co/0RXbJFqp/Whats-App-Image-2026-03-12-at-7-12-15-PM-1.jpg",
+  picadaChorizo:   "https://i.ibb.co/5xkkVzmp/Whats-App-Image-2026-03-12-at-7-12-14-PM-1.jpg",
+  morcilla:        "https://i.ibb.co/XxLvVkfP/Whats-App-Image-2026-03-12-at-7-12-13-PM-1.jpg",
+  hambEspecial:    "https://i.ibb.co/vxHphzR8/Whats-App-Image-2026-03-12-at-7-12-13-PM.jpg",
+  arepRellena:     "https://i.ibb.co/Y6q2G9b/Whats-App-Image-2026-03-12-at-7-12-10-PM.jpg",
+  perroSencillo:   "https://i.ibb.co/gZ26HfTv/Whats-App-Image-2026-03-12-at-7-12-03-PM-1.jpg",
+  cuatroCarnes:    "https://i.ibb.co/rGnfvzTN/Whats-App-Image-2026-03-12-at-7-12-03-PM.jpg",
+  salchipSencilla: "https://i.ibb.co/LdkPWzkp/Whats-App-Image-2026-03-12-at-7-12-03-PM-2.jpg",
+  perroSuizo:      "https://i.ibb.co/TM58JqMg/imagen-2026-03-13-013214303.png",
+};
+
+const menu = {
+  perros:[
+    {name:"Perro Sencillo",     price:6000,  img:IMG.perroSencillo},
+    {name:"Perro a la Plancha", price:7000,  img:null},
+    {name:"Perro Medio Suizo",  price:10000, img:IMG.perroMedioSuizo},
+    {name:"Perro Suizo",        price:15000, img:IMG.perroSuizo},
+    {name:"Choriperro",         price:12000, img:null},
+  ],
+  hamburguesas:[
+    {name:"Hamburguesa Sencilla", price:12000, img:null},
+    {name:"Doble Carne",          price:18000, img:null},
+    {name:"Hamburguesa Especial", price:20000, img:IMG.hambEspecial},
+  ],
+  picadas:[
+    {name:"Picada de Chorizo",  price:7000,  img:IMG.picadaChorizo},
+    {name:"Picada Trifásica",   price:10000, img:IMG.picadaTrifasica},
+    {name:"Morcilla",           price:7000,  img:IMG.morcilla},
+  ],
+  salchipapas:[
+    {name:"Salchipapa Sencilla",    price:12000, img:IMG.salchipSencilla},
+    {name:"Choripapa",              price:15000, img:null},
+    {name:"Salchizuiza",            price:17000, img:IMG.salchizuiza},
+    {name:"Cuatro Carnes",          price:20000, img:IMG.cuatroCarnes},
+    {name:"Salvajada (2 personas)", price:30000, img:null},
+  ],
+  arepas:[
+    {name:"Arepa de Queso",         price:4000, img:null},
+    {name:"Arepa Rellena / Picada", price:8000, img:IMG.arepRellena},
+  ],
+  bebidas:[
+    {name:"Jugo de Corozo",  price:2000, img:null},
+    {name:"Agua de Maíz",    price:2000, img:null},
+    {name:"Agua sin Gas",    price:1500, img:null},
+    {name:"Agua con Gas",    price:2000, img:null},
+    {name:"Agua de Manzana", price:1500, img:null},
+    {name:"Coca-Cola",       price:3500, img:null},
+    {name:"Postobón",        price:3500, img:null},
+  ],
+};
+
+const catLabels = {
+  perros:"🌭 Perros", hamburguesas:"🍔 Hamburguesas",
+  picadas:"🥩 Picadas", salchipapas:"🍟 Salchipapas",
+  arepas:"🫓 Arepas", bebidas:"🥤 Bebidas"
+};
+
+/* ══ BUILD UI ══ */
+async function buildUI() {
+  // Load current values from Firestore
+  let saved = {};
+  try {
+    const snap = await getDoc(doc(db, "config", "menu"));
+    if (snap.exists()) saved = snap.data();
+  } catch(e) { console.warn("No se pudo cargar Firestore", e); }
+
+  document.getElementById("loading").style.display = "none";
+  const container = document.getElementById("admin-panels");
+
+  Object.entries(menu).forEach(([cat, items]) => {
+    const sec = document.createElement("div");
+    sec.className = "cat-section";
+
+    const header = document.createElement("div");
+    header.className = "cat-header";
+    header.innerHTML = `<span class="cat-header-title">${catLabels[cat]}</span><span class="cat-toggle">▼</span>`;
+
+    const body = document.createElement("div");
+    body.className = "cat-body";
+    header.onclick = () => {
+      body.classList.toggle("collapsed");
+      header.querySelector(".cat-toggle").style.transform = body.classList.contains("collapsed") ? "rotate(-90deg)" : "";
+    };
+
+    items.forEach((item, i) => {
+      const savedItem = saved[cat]?.[i] || {};
+      const currentPrice = savedItem.price ?? item.price;
+      const currentImg   = savedItem.img   ?? item.img ?? "";
+
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.dataset.cat = cat;
+      row.dataset.idx = i;
+
+      row.innerHTML = `
+        <div class="item-row-name">${item.name}</div>
+        <div class="item-fields">
+          <div class="field-group">
+            <label>💰 Precio ($)</label>
+            <input type="number" class="price-input" value="${currentPrice}" min="0" step="500">
+          </div>
+          <div class="field-group">
+            <label>🖼️ Link de imagen</label>
+            <input type="url" class="img-input" value="${currentImg}" placeholder="https://i.ibb.co/...">
+            <img class="img-preview" src="${currentImg || ''}" alt="preview">
+          </div>
+        </div>`;
+
+      const imgInput = row.querySelector(".img-input");
+      const preview  = row.querySelector(".img-preview");
+      if (currentImg) preview.style.display = "block";
+      imgInput.addEventListener("input", () => {
+        const val = imgInput.value.trim();
+        if (val) { preview.src = val; preview.style.display = "block"; }
+        else preview.style.display = "none";
+      });
+
+      body.appendChild(row);
+    });
+
+    sec.appendChild(header);
+    sec.appendChild(body);
+    container.appendChild(sec);
+  });
+}
+
+/* ══ SAVE TO FIRESTORE ══ */
+window.saveAll = async function() {
+  const result = {};
+  document.querySelectorAll(".item-row").forEach(row => {
+    const cat = row.dataset.cat;
+    const idx = parseInt(row.dataset.idx);
+    if (!result[cat]) result[cat] = [];
+    while (result[cat].length <= idx) result[cat].push({});
+    const price = parseInt(row.querySelector(".price-input").value);
+    const img   = row.querySelector(".img-input").value.trim();
+    result[cat][idx] = { price: isNaN(price) ? menu[cat][idx].price : price, img };
+  });
+
+  try {
+    await setDoc(doc(db, "config", "menu"), result);
+    toast("✅ ¡Guardado! Todos los clientes ya ven los cambios.");
+  } catch(e) {
+    toast("❌ Error al guardar. Revisa tu conexión.");
+    console.error(e);
+  }
+};
+
+/* ══ RESET ══ */
+window.resetAll = async function() {
+  if (!confirm("¿Restaurar todos los precios e imágenes originales?")) return;
+  try {
+    await deleteDoc(doc(db, "config", "menu"));
+    toast("✅ Restaurado. Recargando...");
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    toast("❌ Error al restaurar.");
+  }
+};
+
+/* ══ TOAST ══ */
+let tt;
+window.toast = function(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(tt);
+  tt = setTimeout(() => t.classList.remove("show"), 3200);
+};
+
+/* ══ CONTRASEÑA ══ */
+const PWD = "elkin123";
+
+window.checkPwd = function() {
+  const val = document.getElementById("pwd-input").value;
+  if (val === PWD) {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("admin-content").style.display = "block";
+    sessionStorage.setItem("dlm_auth", "1");
+    buildUI();
+  } else {
+    const err = document.getElementById("login-error");
+    err.style.display = "block";
+    document.getElementById("pwd-input").value = "";
+    document.getElementById("pwd-input").focus();
+    setTimeout(() => err.style.display = "none", 2500);
+  }
+};
+
+// Si ya estaba autenticado esta sesión, entrar directo
+if (sessionStorage.getItem("dlm_auth") === "1") {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("admin-content").style.display = "block";
+  buildUI();
+}
+</script>
+</body>
+</html>

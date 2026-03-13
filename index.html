@@ -5,6 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Donde La Mona 🍔 Street Food</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Paytone+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBtBUmUwkx2tGJXHz5JpuQWZUht8KRc77o",
+    authDomain: "dondelamona-3609d.firebaseapp.com",
+    projectId: "dondelamona-3609d",
+    storageBucket: "dondelamona-3609d.firebasestorage.app",
+    messagingSenderId: "721494465106",
+    appId: "1:721494465106:web:3664c69deb305178e6dd8b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // Escuchar cambios en tiempo real desde Firestore
+  onSnapshot(doc(db, "config", "menu"), (snap) => {
+    if (!snap.exists()) return;
+    const overrides = snap.data();
+    window._applyFirebaseOverrides && window._applyFirebaseOverrides(overrides);
+  });
+
+  window._db = db;
+</script>
 <style>
 :root{
   --or:#FF5E00;
@@ -809,7 +835,8 @@ const menu = {
 const fmt = p => "$" + p.toLocaleString("es-CO");
 
 /* ── RENDER CARDS ── */
-Object.entries(menu).forEach(([cat, items]) => {
+function buildMenuCards() {
+  Object.entries(menu).forEach(([cat, items]) => {
   const panel = document.getElementById("panel-" + cat);
   items.forEach((item, i) => {
     const card = document.createElement("div");
@@ -834,7 +861,26 @@ Object.entries(menu).forEach(([cat, items]) => {
     card.addEventListener("click", () => openModal(item));
     panel.appendChild(card);
   });
-});
+  });
+}
+buildMenuCards();
+
+/* ── FIREBASE OVERRIDES (tiempo real) ── */
+window._applyFirebaseOverrides = function(overrides) {
+  Object.entries(overrides).forEach(([cat, items]) => {
+    if (!menu[cat]) return;
+    items.forEach((ov, i) => {
+      if (!menu[cat][i]) return;
+      if (ov.price !== undefined) menu[cat][i].price = Number(ov.price);
+      if (ov.img !== undefined && ov.img !== "") menu[cat][i].img = ov.img;
+    });
+  });
+  document.querySelectorAll(".menu-panel").forEach(p => p.innerHTML = "");
+  buildMenuCards();
+  document.querySelectorAll(".item-card").forEach(c => {
+    c.style.opacity = "1"; c.style.transform = "translateY(0)";
+  });
+};
 
 /* ── TABS ── */
 document.querySelectorAll(".tab").forEach(tab => {
