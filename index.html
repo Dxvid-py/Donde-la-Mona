@@ -574,6 +574,12 @@ footer a{color:var(--or);text-decoration:none;font-weight:600}
     <div class="ing-section-title">✅ ¿Qué ingredientes quieres?</div>
     <div class="ing-grid" id="ing-grid"></div>
 
+    <div class="ing-section-title" style="margin-top:.5rem">🧀 Extras</div>
+    <div class="ing-grid" id="extras-grid"></div>
+
+    <div class="ing-section-title" style="margin-top:.5rem">🥤 ¿Quieres una bebida?</div>
+    <div id="bebidas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.8rem"></div>
+
     <div class="ing-section-title" style="margin-top:.5rem">📝 Notas adicionales (opcional)</div>
     <textarea class="notes-area" id="modal-notes" placeholder="Ej: sin sal, extra queso, sin picante..."></textarea>
 
@@ -597,6 +603,17 @@ footer a{color:var(--or);text-decoration:none;font-weight:600}
     <div style="font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);margin-bottom:.75rem">📦 Datos de entrega</div>
 
     <textarea id="delivery-address" class="notes-area" placeholder="📍 Dirección completa (calle, carrera, número de casa/apto...)" style="min-height:72px;margin-bottom:.6rem"></textarea>
+
+    <!-- GPS BUTTON -->
+    <button id="gps-btn" onclick="getLocation()" style="
+      width:100%;padding:.7rem;border-radius:12px;margin-bottom:.6rem;
+      border:1.5px solid var(--bdr);background:var(--bg2);
+      font-family:'Plus Jakarta Sans',sans-serif;font-size:.84rem;font-weight:700;
+      color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
+      transition:border-color .2s;-webkit-tap-highlight-color:transparent;">
+      📍 Usar mi ubicación actual
+    </button>
+    <div id="domicilio-info" style="display:none;text-align:center;font-size:.8rem;font-weight:700;margin-bottom:.6rem;padding:.5rem;border-radius:10px;"></div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
       <button class="tipo-btn" data-tipo="casa" onclick="selectTipo(this)">🏠 Casa</button>
@@ -921,14 +938,40 @@ document.querySelectorAll(".tab").forEach(tab => {
    CUSTOMIZER MODAL
 ══════════════════════════════════ */
 let currentItem = null;
-let ingStates = {};  // {ingName: true/false}
+let ingStates   = {};
+let extrasStates = {};  // {extraName: true/false}
+let bebidaSelected = null; // {name, price}
+
+// Config loaded from Firebase (defaults)
+let domicilioConfig = { radioGratis: 1000, costoExtra: 1000 };
+
+// Local coordinates of the restaurant
+const LOCAL_LAT = 10.9146;
+const LOCAL_LNG = -74.7635;
+
+// Load domicilio config from Firebase
+(async function loadDomicilioConfig() {
+  try {
+    if (window._db) {
+      const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js");
+      const snap = await getDoc(doc(window._db, "config", "domicilio"));
+      if (snap.exists()) domicilioConfig = { ...domicilioConfig, ...snap.data() };
+    }
+  } catch(e) {}
+})();
+
+const EXTRAS = [
+  { name: "Queso Gratinado", price: 5000, e: "🧀" },
+];
 
 function openModal(item) {
-  currentItem = item;
-  ingStates = {};
-  item.ings.forEach(ing => ingStates[ing] = true);  // all checked by default
+  currentItem   = item;
+  ingStates     = {};
+  extrasStates  = {};
+  bebidaSelected = null;
+  item.ings.forEach(ing => ingStates[ing] = true);
+  EXTRAS.forEach(ex => extrasStates[ex.name] = false);
 
-  // image
   const imgWrap = document.getElementById("modal-img-wrap");
   if (item.img) {
     imgWrap.innerHTML = `<img src="${item.img}" alt="${item.name}" onerror="this.parentElement.innerHTML='<div class=modal-img-emoji>${item.e}</div>'">`;
@@ -936,14 +979,16 @@ function openModal(item) {
     imgWrap.innerHTML = `<div class="modal-img-emoji">${item.e}</div>`;
   }
 
-  document.getElementById("modal-name").textContent = item.name;
+  document.getElementById("modal-name").textContent  = item.name;
   document.getElementById("modal-price").textContent = fmt(item.price);
   document.getElementById("modal-notes").value = "";
 
   renderIngGrid(item.ings);
+  renderExtrasGrid();
+  renderBebidasGrid();
 
   const overlay = document.getElementById("modal-overlay");
-  const box = document.getElementById("modal-box");
+  const box     = document.getElementById("modal-box");
   overlay.classList.add("open");
   requestAnimationFrame(() => box.classList.add("open"));
   document.body.style.overflow = "hidden";
@@ -963,11 +1008,53 @@ function renderIngGrid(ings) {
   }).join("");
 }
 
+function renderExtrasGrid() {
+  const grid = document.getElementById("extras-grid");
+  grid.innerHTML = EXTRAS.map(ex => {
+    const checked = extrasStates[ex.name];
+    return `
+      <div class="ing-chip ${checked ? 'checked' : 'unchecked'}" onclick="toggleExtra('${ex.name.replace(/'/g,"\\'")}',this)">
+        <div class="ing-cb">${checked ? '✓' : '✕'}</div>
+        <span class="ing-label">${ex.e} ${ex.name} <strong style="color:var(--or)">+${fmt(ex.price)}</strong></span>
+      </div>`;
+  }).join("");
+}
+
+function renderBebidasGrid() {
+  const grid = document.getElementById("bebidas-grid");
+  const bebs = menu.bebidas || [];
+  grid.innerHTML = bebs.map(b => {
+    const sel = bebidaSelected && bebidaSelected.name === b.name;
+    return `
+      <div class="ing-chip ${sel ? 'checked' : 'unchecked'}" onclick="toggleBebida('${b.name.replace(/'/g,"\\'")}',${b.price},this)">
+        <div class="ing-cb">${sel ? '✓' : '✕'}</div>
+        <span class="ing-label">${b.e} ${b.name} <strong style="color:var(--or)">+${fmt(b.price)}</strong></span>
+      </div>`;
+  }).join("");
+}
+
 function toggleIng(name, chip) {
   ingStates[name] = !ingStates[name];
-  chip.classList.toggle("checked", ingStates[name]);
+  chip.classList.toggle("checked",   ingStates[name]);
   chip.classList.toggle("unchecked", !ingStates[name]);
   chip.querySelector(".ing-cb").textContent = ingStates[name] ? "✓" : "✕";
+}
+
+function toggleExtra(name, chip) {
+  extrasStates[name] = !extrasStates[name];
+  chip.classList.toggle("checked",   extrasStates[name]);
+  chip.classList.toggle("unchecked", !extrasStates[name]);
+  chip.querySelector(".ing-cb").textContent = extrasStates[name] ? "✓" : "✕";
+  renderExtrasGrid();
+}
+
+function toggleBebida(name, price, chip) {
+  if (bebidaSelected && bebidaSelected.name === name) {
+    bebidaSelected = null;
+  } else {
+    bebidaSelected = { name, price };
+  }
+  renderBebidasGrid();
 }
 
 function closeModal() {
@@ -985,9 +1072,19 @@ function addFromModal() {
   if (!currentItem) return;
   const included = Object.entries(ingStates).filter(([,v]) => v).map(([k]) => k);
   const excluded = Object.entries(ingStates).filter(([,v]) => !v).map(([k]) => k);
+  const extras   = EXTRAS.filter(ex => extrasStates[ex.name]);
   const notes    = document.getElementById("modal-notes").value.trim();
 
-  addToCart(currentItem.name, currentItem.price, included, excluded, notes);
+  // Base price + extras
+  let totalPrice = currentItem.price + extras.reduce((s, ex) => s + ex.price, 0);
+
+  addToCart(currentItem.name, totalPrice, included, excluded, notes, extras, bebidaSelected);
+
+  // Add bebida as separate item if selected
+  if (bebidaSelected) {
+    addToCart(bebidaSelected.name, bebidaSelected.price, [], [], "", [], null, true);
+  }
+
   closeModal();
 }
 
@@ -1000,11 +1097,13 @@ mBox.addEventListener("touchend",   e => { if (e.changedTouches[0].clientY - mSt
 /* ══════════════════════════════════
    CART
 ══════════════════════════════════ */
-let cart = [];
+let cart   = [];
 let cartId = 0;
+let domicilioCosto = 0;
+let clienteLat = null, clienteLng = null;
 
-function addToCart(name, price, included, excluded, notes) {
-  cart.push({id: ++cartId, name, price, qty:1, included, excluded, notes});
+function addToCart(name, price, included, excluded, notes, extras = [], bebida = null, isBebida = false) {
+  cart.push({ id: ++cartId, name, price, qty:1, included, excluded, notes, extras, isBebida });
   renderCart();
   toast("✓ " + name + " agregado!");
   const cn = document.getElementById("cn");
@@ -1026,8 +1125,9 @@ function chQty(id, d) {
 }
 
 function renderCart() {
-  const total = cart.reduce((s,i) => s + i.price * i.qty, 0);
-  const count = cart.reduce((s,i) => s + i.qty, 0);
+  const subtotal = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  const total    = subtotal + domicilioCosto;
+  const count    = cart.reduce((s,i) => s + i.qty, 0);
   document.getElementById("cn").textContent = count;
 
   const rows  = document.getElementById("cart-rows");
@@ -1042,9 +1142,10 @@ function renderCart() {
   }
 
   rows.innerHTML = cart.map(it => {
-    const excl = it.excluded.length ? `<span style="color:#e05">Sin: ${it.excluded.join(", ")}</span>` : "";
+    const excl    = it.excluded.length ? `<span style="color:#e05">Sin: ${it.excluded.join(", ")}</span>` : "";
+    const extStr  = it.extras && it.extras.length ? `<span style="color:var(--or)">+ ${it.extras.map(e=>e.name).join(", ")}</span>` : "";
     const noteStr = it.notes ? `<span>${it.notes}</span>` : "";
-    const customHtml = (excl || noteStr) ? `<div class="cr-custom">${[excl,noteStr].filter(Boolean).join(" · ")}</div>` : "";
+    const customHtml = (excl || extStr || noteStr) ? `<div class="cr-custom">${[excl,extStr,noteStr].filter(Boolean).join(" · ")}</div>` : "";
     return `
       <div class="cr">
         <div class="cr-info">
@@ -1065,7 +1166,14 @@ function renderCart() {
       </div>`;
   }).join("");
 
-  totEl.innerHTML = `<div class="cart-total-row"><span>Total</span><span>${fmt(total)}</span></div>`;
+  let totalHtml = `<div class="cart-total-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>`;
+  if (domicilioCosto > 0) {
+    totalHtml += `<div class="cart-total-row" style="font-size:1.1rem"><span>🛵 Domicilio</span><span>+${fmt(domicilioCosto)}</span></div>`;
+  } else if (clienteLat !== null) {
+    totalHtml += `<div style="text-align:center;font-size:.78rem;color:var(--grn);font-weight:700;padding:.3rem 0">🎉 ¡Domicilio gratis!</div>`;
+  }
+  totalHtml += `<div class="cart-total-row"><span>Total</span><span>${fmt(total)}</span></div>`;
+  totEl.innerHTML = totalHtml;
   document.getElementById("delivery-form").style.display = "block";
 }
 
@@ -1112,6 +1220,57 @@ function selectPago(btn) {
   selectedPago = btn.dataset.pago;
 }
 
+/* ── GPS + DOMICILIO ── */
+function calcDistancia(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function getLocation() {
+  const btn  = document.getElementById("gps-btn");
+  const info = document.getElementById("domicilio-info");
+  if (!navigator.geolocation) {
+    toast("⚠️ Tu navegador no soporta GPS");
+    return;
+  }
+  btn.textContent = "⏳ Obteniendo ubicación...";
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(pos => {
+    clienteLat = pos.coords.latitude;
+    clienteLng = pos.coords.longitude;
+    const dist = calcDistancia(LOCAL_LAT, LOCAL_LNG, clienteLat, clienteLng);
+    const radio = domicilioConfig.radioGratis || 1000;
+    const costo = domicilioConfig.costoExtra  || 1000;
+
+    if (dist <= radio) {
+      domicilioCosto = 0;
+      info.style.display = "block";
+      info.style.background = "#E8FFF0";
+      info.style.color = "#1A7A40";
+      info.style.border = "1.5px solid #25D366";
+      info.innerHTML = `🎉 <strong>¡Domicilio gratis!</strong> Estás a ${Math.round(dist)}m del local`;
+    } else {
+      domicilioCosto = costo;
+      info.style.display = "block";
+      info.style.background = "#FFF4E8";
+      info.style.color = "var(--or)";
+      info.style.border = "1.5px solid var(--bdr)";
+      info.innerHTML = `🛵 Domicilio <strong>+${fmt(costo)}</strong> · Estás a ${Math.round(dist)}m del local`;
+    }
+    btn.innerHTML = "✅ Ubicación detectada";
+    btn.style.borderColor = "var(--grn)";
+    btn.style.color = "var(--grn)";
+    renderCart();
+  }, () => {
+    btn.innerHTML = "📍 Usar mi ubicación actual";
+    btn.disabled = false;
+    toast("⚠️ No se pudo obtener tu ubicación");
+  });
+}
+
 function handleWA(e) {
   if (!cart.length) { e.preventDefault(); return false; }
   const address = document.getElementById("delivery-address").value.trim();
@@ -1127,17 +1286,23 @@ function handleWA(e) {
     toast("⚠️ Selecciona un método de pago");
     e.preventDefault(); return false;
   }
-  const total = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  const subtotal = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  const total    = subtotal + domicilioCosto;
+
   let msg = "🍔 *Nuevo Pedido – Donde La Mona* 🍔\n\n";
   cart.forEach(it => {
     msg += `• ${it.qty}x *${it.name}* — ${fmt(it.price * it.qty)}\n`;
+    if (it.extras && it.extras.length) msg += `   🧀 Extra: ${it.extras.map(e=>e.name).join(", ")}\n`;
     if (it.excluded.length) msg += `   🚫 Sin: ${it.excluded.join(", ")}\n`;
     if (it.notes) msg += `   📝 ${it.notes}\n`;
   });
-  msg += `\n💰 *Total: ${fmt(total)}*`;
+  msg += `\n💰 *Subtotal: ${fmt(subtotal)}*`;
+  if (domicilioCosto > 0) msg += `\n🛵 *Domicilio: +${fmt(domicilioCosto)}*`;
+  msg += `\n💵 *Total: ${fmt(total)}*`;
   msg += `\n\n📍 *Dirección:* ${address}`;
   msg += `\n🏠 *Tipo:* ${selectedTipo === "conjunto" ? "Conjunto / Apto" : "Casa"}`;
   msg += `\n💳 *Pago:* ${selectedPago}`;
+  if (clienteLat) msg += `\n🗺️ *Ubicación:* https://maps.google.com/?q=${clienteLat},${clienteLng}`;
   document.getElementById("wa-link").href = "https://wa.me/573192241677?text=" + encodeURIComponent(msg);
   return true;
 }
@@ -1158,14 +1323,14 @@ document.querySelectorAll("#panel-perros .item-card").forEach(c => io.observe(c)
    HORARIO — 6:00pm a 12:30am
 ══════════════════════════════════ */
 function isOpen() {
-  const now = new Date();
+  const now  = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
   return mins >= 18 * 60 || mins <= 30;
 }
 
 function applySchedule() {
-  const waLink      = document.getElementById("wa-link");
-  const closedBanner= document.getElementById("closed-banner");
+  const waLink       = document.getElementById("wa-link");
+  const closedBanner = document.getElementById("closed-banner");
   if (isOpen()) {
     waLink.style.display = "flex";
     closedBanner.style.display = "none";

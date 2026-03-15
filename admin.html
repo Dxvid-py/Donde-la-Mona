@@ -190,6 +190,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
+/* ── CLOUDINARY CONFIG ── */
+const CLOUD_NAME    = "dylyya69h";
+const UPLOAD_PRESET = "dondelamona";
+
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("upload_preset", UPLOAD_PRESET);
+  const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:"POST", body:fd });
+  const data = await res.json();
+  if (data.secure_url) return data.secure_url;
+  throw new Error("Upload failed");
+}
+
 /* ══ MENU BASE ══ */
 const IMG = {
   perroMedioSuizo: "https://i.ibb.co/5W9XG71c/Whats-App-Image-2026-03-12-at-7-12-16-PM.jpg",
@@ -253,15 +267,40 @@ const catLabels = {
 
 /* ══ BUILD UI ══ */
 async function buildUI() {
-  // Load current values from Firestore
-  let saved = {};
+  let saved = {}, domicilioSaved = { radioGratis: 1000, costoExtra: 1000 };
   try {
-    const snap = await getDoc(doc(db, "config", "menu"));
-    if (snap.exists()) saved = snap.data();
-  } catch(e) { console.warn("No se pudo cargar Firestore", e); }
+    const snapMenu = await getDoc(doc(db, "config", "menu"));
+    if (snapMenu.exists()) saved = snapMenu.data();
+    const snapDom  = await getDoc(doc(db, "config", "domicilio"));
+    if (snapDom.exists()) domicilioSaved = { ...domicilioSaved, ...snapDom.data() };
+  } catch(e) { console.warn("Firestore error", e); }
 
   document.getElementById("loading").style.display = "none";
   const container = document.getElementById("admin-panels");
+
+  // ── DOMICILIO CONFIG SECTION ──
+  const domSec = document.createElement("div");
+  domSec.className = "cat-section";
+  domSec.innerHTML = `
+    <div class="cat-header" style="cursor:default">
+      <span class="cat-header-title">🛵 Configuración de Domicilio</span>
+    </div>
+    <div class="cat-body">
+      <div class="item-fields" style="margin-top:.5rem">
+        <div class="field-group">
+          <label>📍 Radio gratis (metros)</label>
+          <input type="number" id="radio-gratis" value="${domicilioSaved.radioGratis}" min="100" step="100">
+        </div>
+        <div class="field-group">
+          <label>💰 Costo extra fuera del radio ($)</label>
+          <input type="number" id="costo-extra" value="${domicilioSaved.costoExtra}" min="0" step="500">
+        </div>
+      </div>
+      <div style="font-size:.75rem;color:var(--txt2);margin-top:.5rem;line-height:1.5">
+        Los clientes dentro del radio reciben domicilio gratis. Los demás pagan el costo extra.
+      </div>
+    </div>`;
+  container.appendChild(domSec);
 
   Object.entries(menu).forEach(([cat, items]) => {
     const sec = document.createElement("div");
@@ -279,9 +318,9 @@ async function buildUI() {
     };
 
     items.forEach((item, i) => {
-      const savedItem = saved[cat]?.[i] || {};
-      const currentPrice = savedItem.price ?? item.price;
-      const currentImg   = savedItem.img   ?? item.img ?? "";
+      const savedItem   = saved[cat]?.[i] || {};
+      const currentPrice= savedItem.price ?? item.price;
+      const currentImg  = savedItem.img   ?? item.img ?? "";
 
       const row = document.createElement("div");
       row.className = "item-row";
@@ -296,12 +335,23 @@ async function buildUI() {
             <input type="number" class="price-input" value="${currentPrice}" min="0" step="500">
           </div>
           <div class="field-group">
-            <label>🖼️ Link de imagen</label>
-            <input type="url" class="img-input" value="${currentImg}" placeholder="https://i.ibb.co/...">
+            <label>🖼️ Imagen</label>
+            <input type="url" class="img-input" value="${currentImg}" placeholder="https://...">
+            <label style="
+              display:flex;align-items:center;justify-content:center;gap:.4rem;
+              margin-top:.4rem;padding:.5rem;border-radius:10px;
+              border:1.5px dashed var(--bdr);background:var(--bg2);
+              font-size:.75rem;font-weight:700;color:var(--txt2);cursor:pointer;
+            ">
+              📷 Subir foto
+              <input type="file" accept="image/*" class="file-input" style="display:none">
+            </label>
+            <div class="upload-status" style="font-size:.72rem;text-align:center;margin-top:.2rem;display:none"></div>
             <img class="img-preview" src="${currentImg || ''}" alt="preview">
           </div>
         </div>`;
 
+      // Preview on URL input
       const imgInput = row.querySelector(".img-input");
       const preview  = row.querySelector(".img-preview");
       if (currentImg) preview.style.display = "block";
@@ -309,6 +359,29 @@ async function buildUI() {
         const val = imgInput.value.trim();
         if (val) { preview.src = val; preview.style.display = "block"; }
         else preview.style.display = "none";
+      });
+
+      // Cloudinary upload on file select
+      const fileInput    = row.querySelector(".file-input");
+      const uploadStatus = row.querySelector(".upload-status");
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        uploadStatus.style.display = "block";
+        uploadStatus.style.color   = "var(--txt2)";
+        uploadStatus.textContent   = "⏳ Subiendo foto...";
+        try {
+          const url = await uploadToCloudinary(file);
+          imgInput.value        = url;
+          preview.src           = url;
+          preview.style.display = "block";
+          uploadStatus.style.color   = "var(--grn)";
+          uploadStatus.textContent   = "✅ ¡Foto subida!";
+          setTimeout(() => uploadStatus.style.display = "none", 2000);
+        } catch(e) {
+          uploadStatus.style.color = "#e05";
+          uploadStatus.textContent = "❌ Error al subir. Intenta de nuevo.";
+        }
       });
 
       body.appendChild(row);
@@ -333,8 +406,13 @@ window.saveAll = async function() {
     result[cat][idx] = { price: isNaN(price) ? menu[cat][idx].price : price, img };
   });
 
+  // Save domicilio config
+  const radioGratis = parseInt(document.getElementById("radio-gratis")?.value) || 1000;
+  const costoExtra  = parseInt(document.getElementById("costo-extra")?.value)  || 1000;
+
   try {
-    await setDoc(doc(db, "config", "menu"), result);
+    await setDoc(doc(db, "config", "menu"),      result);
+    await setDoc(doc(db, "config", "domicilio"), { radioGratis, costoExtra });
     toast("✅ ¡Guardado! Todos los clientes ya ven los cambios.");
   } catch(e) {
     toast("❌ Error al guardar. Revisa tu conexión.");
