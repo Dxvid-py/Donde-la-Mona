@@ -524,6 +524,11 @@ footer{
 footer strong{color:var(--or)}
 footer a{color:var(--or);text-decoration:none;font-weight:600}
 
+/* FALLING BURGERS */
+#burger-rain{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:hidden}
+.fb{position:absolute;font-size:1.6rem;animation:fbFall linear infinite;opacity:.18;user-select:none}
+@keyframes fbFall{0%{transform:translateY(-60px) rotate(0deg)}100%{transform:translateY(110vh) rotate(360deg)}}
+
 /* CLOSED BANNER */
 #closed-banner{
   display:none;
@@ -557,6 +562,7 @@ footer a{color:var(--or);text-decoration:none;font-weight:600}
 </head>
 <body>
 
+<div id="burger-rain"></div>
 <div id="toast"></div>
 
 <div id="modal-overlay" onclick="handleModalOverlayClick(event)">
@@ -602,22 +608,35 @@ footer a{color:var(--or);text-decoration:none;font-weight:600}
   <div id="delivery-form" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1.5px solid var(--bdr)">
     <div style="font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);margin-bottom:.75rem">📦 Datos de entrega</div>
 
-    <textarea id="delivery-address" class="notes-area" placeholder="📍 Dirección completa (calle, carrera, número de casa/apto...)" style="min-height:72px;margin-bottom:.6rem"></textarea>
+    <!-- TIPO DE ENTREGA -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.8rem">
+      <button class="tipo-btn" data-entrega="domicilio" onclick="selectEntrega(this)">🛵 Domicilio</button>
+      <button class="tipo-btn" data-entrega="recoger" onclick="selectEntrega(this)">🏃 Yo recojo</button>
+    </div>
 
-    <!-- GPS BUTTON -->
-    <button id="gps-btn" onclick="getLocation()" style="
-      width:100%;padding:.7rem;border-radius:12px;margin-bottom:.6rem;
-      border:1.5px solid var(--bdr);background:var(--bg2);
-      font-family:'Plus Jakarta Sans',sans-serif;font-size:.84rem;font-weight:700;
-      color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
-      transition:border-color .2s;-webkit-tap-highlight-color:transparent;">
-      📍 Usar mi ubicación actual
-    </button>
-    <div id="domicilio-info" style="display:none;text-align:center;font-size:.8rem;font-weight:700;margin-bottom:.6rem;padding:.5rem;border-radius:10px;"></div>
+    <div id="domicilio-fields">
+      <textarea id="delivery-address" class="notes-area" placeholder="📍 Dirección completa (calle, carrera, número de casa/apto...)" style="min-height:72px;margin-bottom:.6rem"></textarea>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
-      <button class="tipo-btn" data-tipo="casa" onclick="selectTipo(this)">🏠 Casa</button>
-      <button class="tipo-btn" data-tipo="conjunto" onclick="selectTipo(this)">🏢 Conjunto / Apto</button>
+      <button id="gps-btn" onclick="getLocation()" style="
+        width:100%;padding:.7rem;border-radius:12px;margin-bottom:.6rem;
+        border:1.5px solid var(--bdr);background:var(--bg2);
+        font-family:'Plus Jakarta Sans',sans-serif;font-size:.84rem;font-weight:700;
+        color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
+        transition:border-color .2s;-webkit-tap-highlight-color:transparent;">
+        📍 Usar mi ubicación actual
+      </button>
+      <div id="domicilio-info" style="display:none;text-align:center;font-size:.8rem;font-weight:700;margin-bottom:.6rem;padding:.5rem;border-radius:10px;"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
+        <button class="tipo-btn" data-tipo="casa" onclick="selectTipo(this)">🏠 Casa</button>
+        <button class="tipo-btn" data-tipo="conjunto" onclick="selectTipo(this)">🏢 Conjunto / Apto</button>
+      </div>
+    </div>
+
+    <div id="recoger-info" style="display:none;background:var(--bg2);border:1.5px solid var(--bdr);border-radius:12px;padding:1rem;text-align:center;margin-bottom:.6rem">
+      <div style="font-size:1.4rem;margin-bottom:.3rem">🏃</div>
+      <div style="font-weight:800;font-size:.88rem">Pasas a recoger al local</div>
+      <div style="font-size:.78rem;color:var(--txt2);margin-top:.2rem">Cl. 35 #29, Soledad, Arboleda<br>Te avisamos cuando esté listo</div>
     </div>
 
     <div style="font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:.5rem">💳 Método de pago</div>
@@ -643,7 +662,18 @@ footer a{color:var(--or);text-decoration:none;font-weight:600}
 
 <nav>
   <div class="nav-brand">
-    <span class="nav-flame">🔥</span>
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="16" cy="7" rx="13" ry="5" fill="#C8860A"/>
+      <ellipse cx="16" cy="5.5" rx="12" ry="3.5" fill="#E8A020"/>
+      <ellipse cx="10" cy="4" rx="2" ry="1" fill="#C07010" opacity=".6"/>
+      <ellipse cx="18" cy="3.5" rx="1.8" ry="1" fill="#C07010" opacity=".6"/>
+      <ellipse cx="24" cy="4.5" rx="1.8" ry="1" fill="#C07010" opacity=".6"/>
+      <rect x="3" y="11" width="26" height="5" rx="2" fill="#4CAF50"/>
+      <rect x="3" y="15" width="26" height="1.5" rx="1" fill="#FFC300" opacity=".9"/>
+      <rect x="3" y="16" width="26" height="6" rx="2" fill="#8B4513"/>
+      <ellipse cx="16" cy="25" rx="13" ry="5" fill="#6B3A1F"/>
+      <ellipse cx="16" cy="26.5" rx="13" ry="4" fill="#E8A020"/>
+    </svg>
     <div class="nav-logo-txt">Donde <span class="accent">La Mona</span></div>
   </div>
   <button class="cart-btn" onclick="openCart()">
@@ -776,7 +806,12 @@ footer a{color:var(--or);text-decoration:none;font-weight:600}
     <div class="loc-row"><div class="loc-ic">📍</div><div><strong>Dirección</strong><span>Cl. 35 #29, Soledad, Arboleda<br>Atlántico, Colombia</span></div></div>
     <div class="loc-row"><div class="loc-ic">📲</div><div><strong>WhatsApp</strong><span><a href="https://wa.me/573192241677">+57 319 224 1677</a> · ¡Hacemos domicilios!</span></div></div>
     <div class="loc-row"><div class="loc-ic">⏰</div><div><strong>Horario</strong><span>Todos los días · 6:00 pm – 12:30 am</span></div></div>
-    <a href="https://maps.app.goo.gl/t29poDVVRdbTvHGv5" target="_blank" class="map-btn">🗺️ Ver en Google Maps</a>
+    <!-- MAPA EMBEBIDO -->
+    <div style="border-radius:14px;overflow:hidden;border:1.5px solid var(--bdr);margin-top:.5rem">
+      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.5015954912265!2d-74.78473358867905!3d10.925431856381161!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8ef5d300308f3467%3A0xd0b9e2d076ded808!2sComida%20r%C3%A1pida-Donde%20la%20mona!5e0!3m2!1ses-419!2sco!4v1773550953165!5m2!1ses-419!2sco"
+        width="100%" height="220" style="border:0;display:block" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <a href="https://maps.app.goo.gl/t29poDVVRdbTvHGv5" target="_blank" class="map-btn">🗺️ Abrir en Google Maps</a>
   </div>
 </div>
 </section>
@@ -946,8 +981,9 @@ let bebidaSelected = null; // {name, price}
 let domicilioConfig = { radioGratis: 1000, costoExtra: 1000 };
 
 // Local coordinates of the restaurant
-const LOCAL_LAT = 10.9146;
-const LOCAL_LNG = -74.7635;
+const LOCAL_LAT = 10.925431;
+const LOCAL_LNG = -74.784733;
+const DISTANCIA_MAX = 500; // metros máximo para domicilio
 
 // Load domicilio config from Firebase
 (async function loadDomicilioConfig() {
@@ -1205,11 +1241,25 @@ function toast(msg) {
 }
 
 /* ── DELIVERY FORM ── */
-let selectedTipo = "";
-let selectedPago = "";
+let selectedTipo    = "";
+let selectedPago    = "";
+let selectedEntrega = "domicilio";
+
+function selectEntrega(btn) {
+  document.querySelectorAll("[data-entrega]").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  selectedEntrega = btn.dataset.entrega;
+  document.getElementById("domicilio-fields").style.display = selectedEntrega === "domicilio" ? "block" : "none";
+  document.getElementById("recoger-info").style.display     = selectedEntrega === "recoger"   ? "block" : "none";
+  if (selectedEntrega === "recoger") {
+    domicilioCosto = 0;
+    clienteLat = null;
+    renderCart();
+  }
+}
 
 function selectTipo(btn) {
-  document.querySelectorAll(".tipo-btn").forEach(b => b.classList.remove("selected"));
+  document.querySelectorAll(".tipo-btn[data-tipo]").forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
   selectedTipo = btn.dataset.tipo;
 }
@@ -1232,77 +1282,91 @@ function calcDistancia(lat1, lng1, lat2, lng2) {
 function getLocation() {
   const btn  = document.getElementById("gps-btn");
   const info = document.getElementById("domicilio-info");
-  if (!navigator.geolocation) {
-    toast("⚠️ Tu navegador no soporta GPS");
-    return;
-  }
+  if (!navigator.geolocation) { toast("⚠️ Tu navegador no soporta GPS"); return; }
   btn.textContent = "⏳ Obteniendo ubicación...";
   btn.disabled = true;
   navigator.geolocation.getCurrentPosition(pos => {
     clienteLat = pos.coords.latitude;
     clienteLng = pos.coords.longitude;
-    const dist = calcDistancia(LOCAL_LAT, LOCAL_LNG, clienteLat, clienteLng);
+    const dist  = calcDistancia(LOCAL_LAT, LOCAL_LNG, clienteLat, clienteLng);
     const radio = domicilioConfig.radioGratis || 1000;
     const costo = domicilioConfig.costoExtra  || 1000;
 
+    if (dist > DISTANCIA_MAX) {
+      // Fuera del límite máximo — no se puede pedir
+      domicilioCosto = 0;
+      clienteLat = null;
+      info.style.display     = "block";
+      info.style.background  = "#FFF0F0";
+      info.style.color       = "#e05";
+      info.style.border      = "1.5px solid #e05";
+      info.innerHTML = `😞 Lo sentimos, estás a <strong>${Math.round(dist)}m</strong> — solo hacemos domicilios hasta <strong>${DISTANCIA_MAX}m</strong>`;
+      btn.innerHTML  = "📍 Usar mi ubicación actual";
+      btn.disabled   = false;
+      renderCart();
+      return;
+    }
+
     if (dist <= radio) {
       domicilioCosto = 0;
-      info.style.display = "block";
-      info.style.background = "#E8FFF0";
-      info.style.color = "#1A7A40";
-      info.style.border = "1.5px solid #25D366";
+      info.style.display     = "block";
+      info.style.background  = "#E8FFF0";
+      info.style.color       = "#1A7A40";
+      info.style.border      = "1.5px solid #25D366";
       info.innerHTML = `🎉 <strong>¡Domicilio gratis!</strong> Estás a ${Math.round(dist)}m del local`;
     } else {
       domicilioCosto = costo;
-      info.style.display = "block";
-      info.style.background = "#FFF4E8";
-      info.style.color = "var(--or)";
-      info.style.border = "1.5px solid var(--bdr)";
+      info.style.display     = "block";
+      info.style.background  = "#FFF4E8";
+      info.style.color       = "var(--or)";
+      info.style.border      = "1.5px solid var(--bdr)";
       info.innerHTML = `🛵 Domicilio <strong>+${fmt(costo)}</strong> · Estás a ${Math.round(dist)}m del local`;
     }
-    btn.innerHTML = "✅ Ubicación detectada";
-    btn.style.borderColor = "var(--grn)";
-    btn.style.color = "var(--grn)";
+    btn.innerHTML          = "✅ Ubicación detectada";
+    btn.style.borderColor  = "var(--grn)";
+    btn.style.color        = "var(--grn)";
     renderCart();
   }, () => {
-    btn.innerHTML = "📍 Usar mi ubicación actual";
-    btn.disabled = false;
+    btn.innerHTML  = "📍 Usar mi ubicación actual";
+    btn.disabled   = false;
     toast("⚠️ No se pudo obtener tu ubicación");
   });
 }
 
 function handleWA(e) {
   if (!cart.length) { e.preventDefault(); return false; }
-  const address = document.getElementById("delivery-address").value.trim();
-  if (!address) {
-    toast("⚠️ Por favor escribe tu dirección");
-    e.preventDefault(); return false;
+
+  if (selectedEntrega === "domicilio") {
+    const address = document.getElementById("delivery-address").value.trim();
+    if (!address) { toast("⚠️ Por favor escribe tu dirección"); e.preventDefault(); return false; }
+    if (!selectedTipo) { toast("⚠️ Selecciona si es Casa o Conjunto"); e.preventDefault(); return false; }
   }
-  if (!selectedTipo) {
-    toast("⚠️ Selecciona si es Casa o Conjunto");
-    e.preventDefault(); return false;
-  }
-  if (!selectedPago) {
-    toast("⚠️ Selecciona un método de pago");
-    e.preventDefault(); return false;
-  }
+  if (!selectedPago) { toast("⚠️ Selecciona un método de pago"); e.preventDefault(); return false; }
+
   const subtotal = cart.reduce((s,i) => s + i.price * i.qty, 0);
   const total    = subtotal + domicilioCosto;
 
   let msg = "🍔 *Nuevo Pedido – Donde La Mona* 🍔\n\n";
   cart.forEach(it => {
     msg += `• ${it.qty}x *${it.name}* — ${fmt(it.price * it.qty)}\n`;
-    if (it.extras && it.extras.length) msg += `   🧀 Extra: ${it.extras.map(e=>e.name).join(", ")}\n`;
+    if (it.extras && it.extras.length) msg += `   🧀 Extra: ${it.extras.map(ex=>ex.name).join(", ")}\n`;
     if (it.excluded.length) msg += `   🚫 Sin: ${it.excluded.join(", ")}\n`;
     if (it.notes) msg += `   📝 ${it.notes}\n`;
   });
   msg += `\n💰 *Subtotal: ${fmt(subtotal)}*`;
   if (domicilioCosto > 0) msg += `\n🛵 *Domicilio: +${fmt(domicilioCosto)}*`;
   msg += `\n💵 *Total: ${fmt(total)}*`;
-  msg += `\n\n📍 *Dirección:* ${address}`;
-  msg += `\n🏠 *Tipo:* ${selectedTipo === "conjunto" ? "Conjunto / Apto" : "Casa"}`;
+
+  if (selectedEntrega === "recoger") {
+    msg += `\n\n🏃 *El cliente pasa a recoger al local*`;
+  } else {
+    const address = document.getElementById("delivery-address").value.trim();
+    msg += `\n\n📍 *Dirección:* ${address}`;
+    msg += `\n🏠 *Tipo:* ${selectedTipo === "conjunto" ? "Conjunto / Apto" : "Casa"}`;
+    if (clienteLat) msg += `\n🗺️ *Ubicación:* https://maps.google.com/?q=${clienteLat},${clienteLng}`;
+  }
   msg += `\n💳 *Pago:* ${selectedPago}`;
-  if (clienteLat) msg += `\n🗺️ *Ubicación:* https://maps.google.com/?q=${clienteLat},${clienteLng}`;
+
   document.getElementById("wa-link").href = "https://wa.me/573192241677?text=" + encodeURIComponent(msg);
   return true;
 }
@@ -1318,6 +1382,25 @@ const io = new IntersectionObserver(entries => {
   });
 }, {threshold:.05});
 document.querySelectorAll("#panel-perros .item-card").forEach(c => io.observe(c));
+
+/* ══════════════════════════════════
+   HAMBURGUESITAS CAYENDO 🍔
+══════════════════════════════════ */
+(function spawnBurgers() {
+  const rain  = document.getElementById("burger-rain");
+  const emojis = ["🍔","🌭","🍟","🧀","🥤"];
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement("div");
+    el.className = "fb";
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left     = Math.random() * 100 + "vw";
+    el.style.fontSize = (1 + Math.random() * 1.4).toFixed(1) + "rem";
+    el.style.animationDuration  = (6 + Math.random() * 10).toFixed(1) + "s";
+    el.style.animationDelay     = -(Math.random() * 12).toFixed(1) + "s";
+    el.style.opacity = (0.08 + Math.random() * 0.14).toFixed(2);
+    rain.appendChild(el);
+  }
+})();
 
 /* ══════════════════════════════════
    HORARIO — 6:00pm a 12:30am
